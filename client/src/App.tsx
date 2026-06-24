@@ -5,8 +5,10 @@ import Register from "./pages/Register";
 import Jobs from "./pages/Jobs";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { Toaster } from "react-hot-toast";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
@@ -21,8 +23,8 @@ function App() {
 
         {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/jobs" element={<Jobs />} />
-          {/* Add other protected routes like dashboard here */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>
     </BrowserRouter>
