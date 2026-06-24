@@ -28,7 +28,11 @@ function Login() {
     toast.success("Login successful!");
 
     setTimeout(() => {
-      navigate("/dashboard");
+      if (res.data.user.role === 'employer') {
+        navigate("/employer/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     }, 1000);
 
   } catch (error: any) {

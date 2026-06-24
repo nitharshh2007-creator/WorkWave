@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sidebar } from "../components/Sidebar";
 import {
   Bell,
   LogOut,
@@ -51,8 +50,7 @@ export default function Dashboard() {
       toast.error(msg);
       // If unauthorized, redirect to login
       if (err.response?.status === 401) {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        localStorage.clear();
         navigate("/login");
       }
     } finally {
@@ -65,8 +63,7 @@ export default function Dashboard() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.clear();
     toast.success("Successfully logged out");
     navigate("/login");
   };
@@ -146,8 +143,8 @@ export default function Dashboard() {
   const user = data?.user;
   const stats = data?.stats;
 
-  return (<Sidebar>
-    <div className="min-h-screen bg-[#F8FAF8] text-[#2F4F46] relative overflow-hidden pb-12"><div className="max-w-7xl mx-auto px-4">
+  return (
+    <div className="text-[#2F4F46] relative">
       {/* Decorative decorative background blobs */}
       <div className="absolute top-1/4 left-1/10 w-96 h-96 bg-[#B1D3B9]/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/10 w-96 h-96 bg-[#E6F2DD]/30 rounded-full blur-3xl pointer-events-none" />
@@ -209,7 +206,7 @@ export default function Dashboard() {
                       <button
                         onClick={() => {
                           setShowDropdown(false);
-                          toast.success("Profile is coming soon!");
+                          navigate("/profile");
                         }}
                         className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-[#F8FAF8] text-left transition-colors cursor-pointer"
                       >
@@ -231,7 +228,7 @@ export default function Dashboard() {
         </header>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 mt-8 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 mt-8 space-y-8">
         {/* Welcome Section */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
@@ -485,9 +482,7 @@ export default function Dashboard() {
             </motion.div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
-</div>
-    </Sidebar>
   );
 }

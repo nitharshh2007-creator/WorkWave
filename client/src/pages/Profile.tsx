@@ -8,7 +8,6 @@ import {
   ExternalLink, Mail, Phone, MapPin, User, ChevronRight, Sparkles, AlertTriangle
 } from 'lucide-react';
 import api from '../services/api';
-import { Sidebar } from '../components/Sidebar';
 
 interface ProfileState {
   name: string;
@@ -26,6 +25,7 @@ interface ProfileState {
   profileVisibility: 'public' | 'recruiters' | 'private';
   applicationsCount: number;
   savedJobsCount: number;
+  profileStrength: number;
   role: string;
   createdAt: string;
 }
@@ -53,6 +53,7 @@ export const Profile: React.FC = () => {
     profileVisibility: 'recruiters',
     applicationsCount: 0,
     savedJobsCount: 0,
+    profileStrength: 0,
     role: 'candidate',
     createdAt: '',
   });
@@ -88,6 +89,7 @@ export const Profile: React.FC = () => {
         profileVisibility: data.profileVisibility || 'recruiters',
         applicationsCount: data.applicationsCount || 0,
         savedJobsCount: data.savedJobsCount || 0,
+        profileStrength: data.profileStrength || 0,
         role: data.role || 'candidate',
         createdAt: data.createdAt || '',
       };
@@ -143,21 +145,7 @@ export const Profile: React.FC = () => {
     setProfile(prev => ({ ...prev, skills: prev.skills.filter(s => s !== skill) }));
   };
 
-  // Profile Strength Calculator (Frontend weights matching specs)
-  const calculateStrength = (state: ProfileState) => {
-    let score = 0;
-    if (state.profilePicture) score += 10;
-    if (state.name.trim()) score += 10;
-    if (state.email.trim()) score += 10;
-    if (state.phone.trim()) score += 10;
-    if (state.location.trim()) score += 10;
-    if (state.bio.trim()) score += 15;
-    if (state.resumeUrl) score += 20;
-    if (state.skills.length > 0) score += 15;
-    return score;
-  };
-
-  const currentStrength = calculateStrength(profile);
+  const currentStrength = profile.profileStrength;
 
   // Strength status formatting
   const getStrengthLabel = (score: number) => {
@@ -343,8 +331,7 @@ export const Profile: React.FC = () => {
 
   if (loading) {
     return (
-      <Sidebar>
-        <div className="min-h-screen bg-[#F8FAF8] flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-[#F8FAF8] flex flex-col items-center justify-center p-6">
           <div className="space-y-4 w-full max-w-4xl animate-pulse">
             <div className="h-44 bg-white border border-[#E6F2DD] rounded-3xl" />
             <div className="grid grid-cols-4 gap-4 h-24">
@@ -358,8 +345,7 @@ export const Profile: React.FC = () => {
               <div className="h-full bg-white border border-[#E6F2DD] rounded-3xl" />
             </div>
           </div>
-        </div>
-      </Sidebar>
+      </div>
     );
   }
 
@@ -374,9 +360,8 @@ export const Profile: React.FC = () => {
   };
 
   return (
-    <Sidebar>
+    <>
       <Toaster position="top-right" />
-      
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -1008,7 +993,7 @@ export const Profile: React.FC = () => {
         </AnimatePresence>
         
       </motion.div>
-    </Sidebar>
+    </>
   );
 };
 

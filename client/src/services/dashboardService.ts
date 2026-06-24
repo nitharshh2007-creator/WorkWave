@@ -6,6 +6,7 @@ export interface UserInfo {
   role: "candidate" | "employer" | "admin";
 }
 
+// Candidate Dashboard
 export interface Stats {
   applications: number;
   savedJobs: number;
@@ -34,11 +35,9 @@ export interface ApplicationInfo {
 }
 
 export interface ActivityInfo {
-  id: string;
-  type: string;
-  detail: string;
-  time: string;
-  status: string;
+  _id: string;
+  description: string;
+  date: Date;
 }
 
 export interface DashboardData {
@@ -56,6 +55,47 @@ export const fetchDashboardData = async (): Promise<DashboardData> => {
   }
 
   const response = await api.get<DashboardData>("/dashboard", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.data;
+};
+
+// Employer Dashboard
+export interface EmployerStats {
+  totalJobs: number;
+  activeJobs: number;
+  applications: number;
+  interviews: number;
+}
+
+export interface ApplicationsPerJob {
+    name: string;
+    applications: number;
+}
+
+export interface ApplicationsByDate {
+    name: string;
+    applications: number;
+}
+
+export interface EmployerDashboardData {
+  stats: EmployerStats;
+  recentActivity: ActivityInfo[];
+  applicationsPerJob: ApplicationsPerJob[];
+  applicationsByDate: ApplicationsByDate[];
+  user: UserInfo;
+}
+
+export const fetchEmployerDashboardData = async (): Promise<EmployerDashboardData> => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
+
+  const response = await api.get<EmployerDashboardData>("/dashboard/employer", {
     headers: {
       Authorization: `Bearer ${token}`,
     },

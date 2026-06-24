@@ -1,28 +1,30 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const applicationSchema = new mongoose.Schema(
-  {
-    candidate: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-
-    job: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Job",
-      required: true,
-    },
-
-    status: {
-      type: String,
-      enum: ["Pending", "Accepted", "Rejected"],
-      default: "Pending",
-    },
+const applicationSchema = new mongoose.Schema({
+  jobTitle: {
+    type: String,
+    required: true,
   },
-  {
-    timestamps: true,
-  }
-);
+  company: {
+    type: String,
+    required: true,
+  },
+  location: {
+    type: String,
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ['Pending', 'Accepted', 'Rejected'],
+    default: 'Pending',
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'User',
+  },
+}, {
+  timestamps: true, // This will add createdAt and updatedAt fields
+});
 
-module.exports = mongoose.model("Application", applicationSchema);
+module.exports = mongoose.model('Application', applicationSchema);
