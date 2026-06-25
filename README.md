@@ -88,17 +88,63 @@
 
 ## Screenshots
 
-> *Add screenshots or walkthrough videos here once UI captures are available.*
+### Authentication
 
-| Candidate Dashboard | Jobs Search Grid |
-| :---: | :---: |
-| *[Dashboard Preview Placeholder]* | *[Jobs Preview Placeholder]* |
+| Login | Register |
+|:-----:|:--------:|
+| ![](docs/login.png) | ![](docs/register.png) |
 
-| Job Details Page | Employer Analytics Report |
-| :---: | :---: |
-| *[Job Details Placeholder]* | *[Analytics Report Placeholder]* |
+### Candidate Dashboard
 
----
+| Overview | Statistics | Activity |
+|:--------:|:----------:|:--------:|
+| ![](docs/candidate-dashboard-overview.png) | ![](docs/candidate-dashboard-stats.png) | ![](docs/candidate-dashboard-activity.png) |
+
+### Jobs
+
+| Browse Jobs | Job Details |
+|:-----------:|:-----------:|
+| ![](docs/jobs.png) | ![](docs/job-details.png) |
+
+### Applications
+
+| Applications | Interview Calls |
+|:------------:|:---------------:|
+| ![](docs/applications.png) | ![](docs/interview-calls.png) |
+
+### Employer Dashboard
+
+| Dashboard | Insights |
+|:---------:|:--------:|
+| ![](docs/employer-dashboard.png) | ![](docs/employer-dashboard-insights.png) |
+
+### Job Posting
+
+| Step 1 | Step 2 | Step 3 |
+|:------:|:------:|:------:|
+| ![](docs/post-job-step1.png) | ![](docs/post-job-step2.png) | ![](docs/post-job-step3.png) |
+
+### Applicant Management
+
+| Applicant Overview | Candidate Analytics | Recruitment Workflow |
+|:------------------:|:----------------:|:--------------------:|
+| ![](docs/applicant-overview.png) | ![](docs/candidate-analytics-review.png) | ![](docs/recruitment-workflow.png) |
+
+### Employer Profile
+
+| Overview | Details |
+|:--------:|:-------:|
+| ![](docs/employer-profile-overview.png) | ![](docs/employer-profile-details.png) |
+
+### Analytics
+
+| Dashboard | Insights |
+|:---------:|:--------:|
+| ![](docs/analytics-dashboard.png) | ![](docs/analytics-insights.png) |
+
+ **Sample Analytics Report**
+
+[WorkWave_Analytics_Report.pdf](docs/WorkWave_Analytics_Report.pdf)
 
 ## Database Design
 
