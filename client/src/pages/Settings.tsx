@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User,
@@ -10,19 +10,19 @@ import {
   LogOut,
   AlertTriangle,
   Save,
-  X,
   Loader2,
   UploadCloud,
   Download,
   Eye,
   EyeOff,
   Edit,
-  CheckCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
 import { useDropzone } from 'react-dropzone';
 import { useNavigate } from 'react-router-dom';
+import HeroCard from '../components/HeroCard';
+import { Settings as SettingsIcon } from 'lucide-react';
 
 // --- TYPES ---
 
@@ -33,6 +33,9 @@ interface UserSettings {
   college: string;
   department: string;
   graduationYear: number | string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  portfolioUrl?: string;
   notifications: {
     newJobAlerts: boolean;
     applicationStatusUpdates: boolean;
@@ -160,6 +163,9 @@ const AccountSettings = ({ initialData, onUpdate }) => {
     college: initialData.college,
     department: initialData.department,
     graduationYear: initialData.graduationYear,
+    linkedinUrl: initialData.linkedinUrl || '',
+    githubUrl: initialData.githubUrl || '',
+    portfolioUrl: initialData.portfolioUrl || '',
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -170,6 +176,9 @@ const AccountSettings = ({ initialData, onUpdate }) => {
       college: initialData.college,
       department: initialData.department,
       graduationYear: initialData.graduationYear,
+      linkedinUrl: initialData.linkedinUrl || '',
+      githubUrl: initialData.githubUrl || '',
+      portfolioUrl: initialData.portfolioUrl || '',
     });
   }, [initialData]);
 
@@ -198,6 +207,9 @@ const AccountSettings = ({ initialData, onUpdate }) => {
       college: initialData.college,
       department: initialData.department,
       graduationYear: initialData.graduationYear,
+      linkedinUrl: initialData.linkedinUrl || '',
+      githubUrl: initialData.githubUrl || '',
+      portfolioUrl: initialData.portfolioUrl || '',
     });
     setIsEditing(false);
   };
@@ -212,6 +224,9 @@ const AccountSettings = ({ initialData, onUpdate }) => {
           <InputField label="College/University" name="college" value={formData.college} onChange={handleChange} disabled={!isEditing} />
           <InputField label="Department" name="department" value={formData.department} onChange={handleChange} disabled={!isEditing} />
           <InputField label="Graduation Year" name="graduationYear" type="number" value={String(formData.graduationYear ?? '')} onChange={handleChange} disabled={!isEditing} />
+          <InputField label="LinkedIn URL" name="linkedinUrl" value={formData.linkedinUrl} onChange={handleChange} disabled={!isEditing} placeholder="https://linkedin.com/in/username" />
+          <InputField label="GitHub URL" name="githubUrl" value={formData.githubUrl} onChange={handleChange} disabled={!isEditing} placeholder="https://github.com/username" />
+          <InputField label="Portfolio URL" name="portfolioUrl" value={formData.portfolioUrl} onChange={handleChange} disabled={!isEditing} placeholder="https://portfolio.com" />
         </div>
         <div className="flex justify-end gap-3 pt-2">
           {isEditing ? (
@@ -388,7 +403,6 @@ const PrivacySettings = ({ initialData, onUpdate }) => (
 
 const ResumeManagement = ({ initialData, onUpdate }) => {
     const [isUploading, setIsUploading] = useState(false);
-    const [isRemoving, setIsRemoving] = useState(false);
     const [showRemoveModal, setShowRemoveModal] = useState(false);
 
     const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -420,7 +434,6 @@ const ResumeManagement = ({ initialData, onUpdate }) => {
     });
 
     const handleRemove = async () => {
-        setIsRemoving(true);
         setShowRemoveModal(false);
         try {
             await api.delete('/user/settings/resume');
@@ -428,8 +441,6 @@ const ResumeManagement = ({ initialData, onUpdate }) => {
             onUpdate();
         } catch (error) {
             toast.error('Failed to remove resume.');
-        } finally {
-            setIsRemoving(false);
         }
     };
 
@@ -720,27 +731,12 @@ const Settings = () => {
 
   return (
     <div className="w-full max-w-full overflow-x-hidden px-4 lg:px-8 space-y-8 pb-12">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="pt-8"
-        >
-          <h1
-  style={{
-    color: "#2F4F46",
-    opacity: 1,
-    fontWeight: 800,
-    fontSize: "3rem",
-    letterSpacing: "-0.02em",
-    lineHeight: "1.1",
-  }}
->
-  Settings
-</h1>
-          <p className="mt-2 text-lg text-[#4A6A60]">
-            Manage your WorkWave account, security and preferences.
-          </p>
-        </motion.div>
+        <HeroCard
+          badgeText="Account Center"
+          title="Account Settings"
+          description="Manage your WorkWave profile credentials, configure email notifications, update privacy visibility, upload resumes, or delete your account."
+          IconComponent={SettingsIcon}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Tabs Navigation */}

@@ -35,9 +35,14 @@ export interface ApplicationInfo {
 }
 
 export interface ActivityInfo {
-  _id: string;
-  description: string;
-  date: Date;
+  id: string;
+  type: string;
+  detail: string;
+  time: string;
+  status: string;
+  _id?: string;
+  description?: string;
+  date?: Date;
 }
 
 export interface DashboardData {
@@ -69,6 +74,9 @@ export interface EmployerStats {
   activeJobs: number;
   applications: number;
   interviews: number;
+  shortlisted?: number;
+  hired?: number;
+  rejected?: number;
 }
 
 export interface ApplicationsPerJob {
@@ -81,12 +89,32 @@ export interface ApplicationsByDate {
     applications: number;
 }
 
+export interface UpcomingInterview {
+  _id: string;
+  interviewDate: string;
+  interviewTime: string;
+  meetingLink: string;
+  interviewNotes?: string;
+  interviewStatus: 'Upcoming' | 'Completed' | 'Cancelled';
+  user: {
+    _id: string;
+    name: string;
+    email: string;
+    profilePicture?: string;
+  };
+  job: {
+    _id: string;
+    title: string;
+  };
+}
+
 export interface EmployerDashboardData {
   stats: EmployerStats;
   recentActivity: ActivityInfo[];
   applicationsPerJob: ApplicationsPerJob[];
   applicationsByDate: ApplicationsByDate[];
   user: UserInfo;
+  upcomingInterviews: UpcomingInterview[];
 }
 
 export const fetchEmployerDashboardData = async (): Promise<EmployerDashboardData> => {

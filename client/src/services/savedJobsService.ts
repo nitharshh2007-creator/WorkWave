@@ -1,34 +1,39 @@
+import api from './api';
 import { type Job } from '../pages/jobs';
 
-const SAVED_JOBS_KEY = 'savedJobs';
-
-export const getSavedJobs = (): Job[] => {
+export const getSavedJobs = async (): Promise<Job[]> => {
   try {
-    const savedJobsJson = localStorage.getItem(SAVED_JOBS_KEY);
-    return savedJobsJson ? JSON.parse(savedJobsJson) : [];
+    const response = await api.get<Job[]>('/user/saved-jobs');
+    return response.data;
   } catch (error) {
-    console.error("Error parsing saved jobs from localStorage", error);
+    console.error("Error fetching saved jobs from backend", error);
     return [];
   }
 };
 
-export const saveJob = (job: Job): boolean => {
-  const savedJobs = getSavedJobs();
-  if (savedJobs.some(j => j.id === job.id)) {
-    return false; // Already saved
+export const saveJob = async (jobId: string): Promise<boolean> => {
+  try {
+    await api.post('/user/saved-jobs', { jobId });
+    return true;
+  } catch (error) {
+    console.error("Error saving job", error);
+    return false;
   }
-  const newSavedJobs = [...savedJobs, job];
-  localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(newSavedJobs));
-  return true; // Successfully saved
 };
 
-export const unsaveJob = (jobId: number): void => {
-  const savedJobs = getSavedJobs();
-  const newSavedJobs = savedJobs.filter(j => j.id !== jobId);
-  localStorage.setItem(SAVED_JOBS_KEY, JSON.stringify(newSavedJobs));
+export const unsaveJob = async (jobId: string): Promise<void> => {
+  try {
+    await api.delete(`/user/saved-jobs/${jobId}`);
+  } catch (error) {
+    console.error("Error unsaving job", error);
+  }
 };
 
-export const isJobSaved = (jobId: number): boolean => {
-  const savedJobs = getSavedJobs();
-  return savedJobs.some(j => j.id === jobId);
+export const isJobSaved = async (jobId: string): Promise<boolean> => {
+  try {
+    const savedJobs = await getSavedJobs();
+    return savedJobs.some(j => ((j as any)._id || (j as any).id || '').toString() === jobId.toString());
+  } catch (error) {
+    return false;
+  }
 };

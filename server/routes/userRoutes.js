@@ -8,6 +8,9 @@ const {
   uploadResume,
   deleteResume,
   getProfileCompletion,
+  getSavedJobs,
+  saveJob,
+  unsaveJob,
 } = require('../controllers/userController');
 
 // All routes are protected
@@ -19,5 +22,10 @@ router.post('/upload-picture', uploadPicture);
 router.post('/upload-resume', uploadResume);
 router.delete('/resume', deleteResume);
 router.get('/profile-completion', getProfileCompletion);
+
+// Saved Jobs Endpoints
+router.get('/saved-jobs', getSavedJobs);
+router.post('/saved-jobs', saveJob);
+router.delete('/saved-jobs/:jobId', unsaveJob);
 
 module.exports = router;

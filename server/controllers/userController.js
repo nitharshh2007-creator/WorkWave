@@ -3,6 +3,7 @@ const fs = require('fs');
 const User = require('../models/User');
 const Application = require('../models/Application');
 const SavedJob = require('../models/SavedJob');
+const Job = require('../models/Job');
 const multer = require('multer');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -61,15 +62,34 @@ const getProfile = async (req, res) => {
     const user = await User.findById(req.user.id).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
     
-    const applicationsCount = await Application.countDocuments({ candidate: req.user.id });
+    const applicationsCount = await Application.countDocuments({ user: req.user.id });
     const savedJobsCount = await SavedJob.countDocuments({ user: req.user.id });
     const profileStrength = calculateProfileStrength(user);
+
+    let employerMetrics = {};
+    if (user.role === 'employer') {
+      const activeJobsCount = await Job.countDocuments({ createdBy: user._id, status: 'active' });
+      const archivedJobsCount = await Job.countDocuments({ createdBy: user._id, status: 'archived' });
+      const totalApplicantsCount = await Application.countDocuments({ employer: user._id });
+      const interviewsScheduledCount = await Application.countDocuments({ employer: user._id, status: 'Interview Scheduled' });
+      const hiresCount = await Application.countDocuments({ employer: user._id, status: { $in: ['Selected / Hired', 'Hired'] } });
+      
+      employerMetrics = {
+        activeJobsCount,
+        archivedJobsCount,
+        totalApplicantsCount,
+        interviewsScheduledCount,
+        hiresCount,
+        profileViews: user.profileViews || 0,
+      };
+    }
 
     res.json({
       ...user.toObject(),
       applicationsCount,
       savedJobsCount,
       profileStrength,
+      ...employerMetrics,
     });
   } catch (err) {
     console.error('GetProfile error:', err);
@@ -77,11 +97,19 @@ const getProfile = async (req, res) => {
   }
 };
 
-// @desc    Update authenticated user's profile fields
-// @route   PATCH /api/user/profile
-// @access  Protected
 const updateProfile = async (req, res) => {
-  const { name, email, phone, location, bio, skills, professionalTitle, profileVisibility } = req.body;
+  const {
+    name, email, phone, location, bio, skills, professionalTitle, profileVisibility,
+    linkedinUrl, githubUrl, portfolioUrl, experience, education,
+    industry, companySize, foundedYear, headquarters, website,
+    twitterUrl, facebookUrl, companyGallery, companyBanner,
+    recruiterName, recruiterPosition, recruiterEmail, recruiterPhone,
+    preferredWorkMode, preferredExperience, hiringLocations, companyBenefits,
+    verifiedEmployer, tagline, companyEmail, workingHours, companyMission,
+    companyVision, companyCoreValues, companyEnvironment, officeLocations,
+    instagramUrl, jobsPostedThisMonth, responseRate, averageHiringTime
+  } = req.body;
+  
   const update = {};
   
   if (name !== undefined) update.name = name;
@@ -92,21 +120,78 @@ const updateProfile = async (req, res) => {
   if (Array.isArray(skills)) update.skills = skills;
   if (professionalTitle !== undefined) update.professionalTitle = professionalTitle;
   if (profileVisibility !== undefined) update.profileVisibility = profileVisibility;
+  if (linkedinUrl !== undefined) update.linkedinUrl = linkedinUrl;
+  if (githubUrl !== undefined) update.githubUrl = githubUrl;
+  if (portfolioUrl !== undefined) update.portfolioUrl = portfolioUrl;
+  if (experience !== undefined) update.experience = experience;
+  if (education !== undefined) update.education = education;
+  
+  // Employer Specific Fields
+  if (industry !== undefined) update.industry = industry;
+  if (companySize !== undefined) update.companySize = companySize;
+  if (foundedYear !== undefined) update.foundedYear = foundedYear;
+  if (headquarters !== undefined) update.headquarters = headquarters;
+  if (website !== undefined) update.website = website;
+  if (twitterUrl !== undefined) update.twitterUrl = twitterUrl;
+  if (facebookUrl !== undefined) update.facebookUrl = facebookUrl;
+  if (Array.isArray(companyGallery)) update.companyGallery = companyGallery;
+  if (companyBanner !== undefined) update.companyBanner = companyBanner;
+  if (recruiterName !== undefined) update.recruiterName = recruiterName;
+  if (recruiterPosition !== undefined) update.recruiterPosition = recruiterPosition;
+  if (recruiterEmail !== undefined) update.recruiterEmail = recruiterEmail;
+  if (recruiterPhone !== undefined) update.recruiterPhone = recruiterPhone;
+  if (preferredWorkMode !== undefined) update.preferredWorkMode = preferredWorkMode;
+  if (preferredExperience !== undefined) update.preferredExperience = preferredExperience;
+  if (Array.isArray(hiringLocations)) update.hiringLocations = hiringLocations;
+  if (Array.isArray(companyBenefits)) update.companyBenefits = companyBenefits;
+  if (verifiedEmployer !== undefined) update.verifiedEmployer = verifiedEmployer;
+  if (tagline !== undefined) update.tagline = tagline;
+  if (companyEmail !== undefined) update.companyEmail = companyEmail;
+  if (workingHours !== undefined) update.workingHours = workingHours;
+  if (companyMission !== undefined) update.companyMission = companyMission;
+  if (companyVision !== undefined) update.companyVision = companyVision;
+  if (companyCoreValues !== undefined) update.companyCoreValues = companyCoreValues;
+  if (companyEnvironment !== undefined) update.companyEnvironment = companyEnvironment;
+  if (Array.isArray(officeLocations)) update.officeLocations = officeLocations;
+  if (instagramUrl !== undefined) update.instagramUrl = instagramUrl;
+  if (jobsPostedThisMonth !== undefined) update.jobsPostedThisMonth = jobsPostedThisMonth;
+  if (responseRate !== undefined) update.responseRate = responseRate;
+  if (averageHiringTime !== undefined) update.averageHiringTime = averageHiringTime;
+
   update.lastUpdated = Date.now();
 
   try {
     const user = await User.findByIdAndUpdate(req.user.id, update, { new: true, runValidators: true }).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const applicationsCount = await Application.countDocuments({ candidate: req.user.id });
+    const applicationsCount = await Application.countDocuments({ user: req.user.id });
     const savedJobsCount = await SavedJob.countDocuments({ user: req.user.id });
     const profileStrength = calculateProfileStrength(user);
+
+    let employerMetrics = {};
+    if (user.role === 'employer') {
+      const activeJobsCount = await Job.countDocuments({ createdBy: user._id, status: 'active' });
+      const archivedJobsCount = await Job.countDocuments({ createdBy: user._id, status: 'archived' });
+      const totalApplicantsCount = await Application.countDocuments({ employer: user._id });
+      const interviewsScheduledCount = await Application.countDocuments({ employer: user._id, status: 'Interview Scheduled' });
+      const hiresCount = await Application.countDocuments({ employer: user._id, status: { $in: ['Selected / Hired', 'Hired'] } });
+      
+      employerMetrics = {
+        activeJobsCount,
+        archivedJobsCount,
+        totalApplicantsCount,
+        interviewsScheduledCount,
+        hiresCount,
+        profileViews: user.profileViews || 0,
+      };
+    }
 
     res.json({
       ...user.toObject(),
       applicationsCount,
       savedJobsCount,
       profileStrength,
+      ...employerMetrics,
     });
   } catch (err) {
     console.error('UpdateProfile error:', err);
@@ -114,30 +199,68 @@ const updateProfile = async (req, res) => {
   }
 };
 
-// @desc    Upload profile picture (single file)
+// @desc    Upload profile picture or company banner
 // @route   POST /api/user/upload-picture
 // @access  Protected
-const uploadPicture = [protect, upload.single('profilePicture'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-  const pictureUrl = `/uploads/${req.file.filename}`;
+const uploadPicture = [protect, upload.fields([
+  { name: 'profilePicture', maxCount: 1 },
+  { name: 'companyBanner', maxCount: 1 }
+]), async (req, res) => {
   try {
+    const files = req.files || {};
+    let update = { lastUpdated: Date.now() };
+    let pictureUrl = '';
+    let bannerUrl = '';
+
+    if (files.profilePicture && files.profilePicture[0]) {
+      pictureUrl = `/uploads/${files.profilePicture[0].filename}`;
+      update.profilePicture = pictureUrl;
+    }
+    if (files.companyBanner && files.companyBanner[0]) {
+      bannerUrl = `/uploads/${files.companyBanner[0].filename}`;
+      update.companyBanner = bannerUrl;
+    }
+
+    if (!update.profilePicture && !update.companyBanner) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { profilePicture: pictureUrl, lastUpdated: Date.now() },
+      update,
       { new: true }
     ).select('-password');
 
-    const applicationsCount = await Application.countDocuments({ candidate: req.user.id });
+    const applicationsCount = await Application.countDocuments({ user: req.user.id });
     const savedJobsCount = await SavedJob.countDocuments({ user: req.user.id });
     const profileStrength = calculateProfileStrength(user);
 
+    let employerMetrics = {};
+    if (user.role === 'employer') {
+      const activeJobsCount = await Job.countDocuments({ createdBy: user._id, status: 'active' });
+      const archivedJobsCount = await Job.countDocuments({ createdBy: user._id, status: 'archived' });
+      const totalApplicantsCount = await Application.countDocuments({ employer: user._id });
+      const interviewsScheduledCount = await Application.countDocuments({ employer: user._id, status: 'Interview Scheduled' });
+      const hiresCount = await Application.countDocuments({ employer: user._id, status: { $in: ['Selected / Hired', 'Hired'] } });
+      
+      employerMetrics = {
+        activeJobsCount,
+        archivedJobsCount,
+        totalApplicantsCount,
+        interviewsScheduledCount,
+        hiresCount,
+        profileViews: user.profileViews || 0,
+      };
+    }
+
     res.json({
-      url: pictureUrl,
+      url: pictureUrl || bannerUrl,
       user: {
         ...user.toObject(),
         applicationsCount,
         savedJobsCount,
         profileStrength,
+        ...employerMetrics
       }
     });
   } catch (err) {
@@ -177,7 +300,7 @@ const uploadResume = [protect, upload.single('resume'), async (req, res) => {
       { new: true }
     ).select('-password');
 
-    const applicationsCount = await Application.countDocuments({ candidate: req.user.id });
+    const applicationsCount = await Application.countDocuments({ user: req.user.id });
     const savedJobsCount = await SavedJob.countDocuments({ user: req.user.id });
     const profileStrength = calculateProfileStrength(user);
 
@@ -227,7 +350,7 @@ const deleteResume = async (req, res) => {
     user.lastUpdated = Date.now();
     await user.save();
 
-    const applicationsCount = await Application.countDocuments({ candidate: req.user.id });
+    const applicationsCount = await Application.countDocuments({ user: req.user.id });
     const savedJobsCount = await SavedJob.countDocuments({ user: req.user.id });
     const profileStrength = calculateProfileStrength(user);
 
@@ -265,6 +388,67 @@ const getProfileCompletion = async (req, res) => {
   }
 };
 
+// @desc    Get saved jobs
+// @route   GET /api/user/saved-jobs
+// @access  Private (Candidate)
+const getSavedJobs = async (req, res) => {
+  try {
+    const savedJobs = await SavedJob.find({ user: req.user.id })
+      .populate({
+        path: 'job',
+        populate: {
+          path: 'createdBy',
+          select: '-password'
+        }
+      })
+      .sort({ savedAt: -1 });
+    const jobs = savedJobs.map(sj => sj.job).filter(Boolean);
+    res.json(jobs);
+  } catch (err) {
+    console.error('getSavedJobs error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Save a job
+// @route   POST /api/user/saved-jobs
+// @access  Private (Candidate)
+const saveJob = async (req, res) => {
+  try {
+    const { jobId } = req.body;
+    
+    const alreadySaved = await SavedJob.findOne({ user: req.user.id, job: jobId });
+    if (alreadySaved) {
+      return res.status(400).json({ message: 'Job already saved' });
+    }
+
+    const savedJob = new SavedJob({
+      user: req.user.id,
+      job: jobId
+    });
+
+    await savedJob.save();
+    res.status(201).json({ success: true, message: 'Job saved successfully' });
+  } catch (err) {
+    console.error('saveJob error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Unsave a job
+// @route   DELETE /api/user/saved-jobs/:jobId
+// @access  Private (Candidate)
+const unsaveJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+    await SavedJob.deleteOne({ user: req.user.id, job: jobId });
+    res.json({ success: true, message: 'Job unsaved successfully' });
+  } catch (err) {
+    console.error('unsaveJob error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -272,4 +456,7 @@ module.exports = {
   uploadResume,
   deleteResume,
   getProfileCompletion,
+  getSavedJobs,
+  saveJob,
+  unsaveJob,
 };

@@ -1,43 +1,12 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { StatCard } from "../components/StatCard";
 import { QuickActions } from "../components/QuickActions";
 import { ActivityTimeline } from "../components/ActivityTimeline";
-import { fetchDashboardData, DashboardData } from "../services/dashboardService";
+import { fetchDashboardData, type DashboardData } from "../services/dashboardService";
 import toast from "react-hot-toast";
 
-// Mock Data for components
-const recentActivityData = [
-  {
-    id: "1",
-    type: "job_applied",
-    detail: "Applied to Senior Frontend Developer",
-    time: "2d ago",
-    status: "Pending",
-  },
-  {
-    id: "2",
-    type: "profile_updated",
-    detail: "Updated your profile picture",
-    time: "3d ago",
-    status: "Completed",
-  },
-  {
-    id: "3",
-    type: "resume_uploaded",
-    detail: "Uploaded 'MyResume_June_2024.pdf'",
-    time: "5d ago",
-    status: "Completed",
-  },
-    {
-    id: "4",
-    type: "interview_scheduled",
-    detail: "Interview with TechCorp for UI/UX Designer",
-    time: "1w ago",
-    status: "Upcoming",
-  },
-];
-
+// Component to render candidate dashboard details
 export default function CandidateDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -143,7 +112,8 @@ export default function CandidateDashboard() {
         />
         <StatCard
           title="Profile Completion"
-          value={`${stats.profileCompletion}%`}
+          value={stats.profileCompletion}
+          suffix="%"
           iconName="UserCheck"
           delay={0.4}
         />
@@ -160,7 +130,7 @@ export default function CandidateDashboard() {
           <h3 className="text-lg font-bold text-[#2F4F46] mb-6">
             Recent Activity
           </h3>
-          <ActivityTimeline activities={recentActivityData} />
+          <ActivityTimeline activities={data?.activities || []} />
         </motion.div>
 
         {/* Quick Actions */}

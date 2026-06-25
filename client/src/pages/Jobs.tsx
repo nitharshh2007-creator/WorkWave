@@ -12,10 +12,14 @@ import {
   Sparkles,
   FilterX,
   Globe,
-  Zap
+  Zap,
+  Check
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { type Job, jobs } from './jobs';
+import type { Job } from './jobs';
+import { getJobs } from '../services/jobService';
+import HeroCard from '../components/HeroCard';
+import api from '../services/api';
 
 const filterChips = ['All', 'Internship', 'Full Time', 'Part Time', 'Remote', 'Frontend', 'Backend', 'UI/UX'];
 
@@ -40,7 +44,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon }) => (
     </div>
   </motion.div>
 );
-const isJobSaved = (jobId: number) => {
+const isJobSaved = (jobId: string | number) => {
   const savedJobs = JSON.parse(
     localStorage.getItem("savedJobs") || "[]"
   );
@@ -50,7 +54,7 @@ const isJobSaved = (jobId: number) => {
   );
 };
 // --- JOB CARD COMPONENT ---
-const JobCard: React.FC<{ job: Job }> = ({ job }) => {
+const JobCard: React.FC<{ job: Job; hasApplied: boolean }> = ({ job, hasApplied }) => {
   const [isSaved, setIsSaved] = useState(() => isJobSaved(job.id));
   const navigate = useNavigate();
 const saveJob = (job: Job) => {
@@ -74,7 +78,7 @@ const saveJob = (job: Job) => {
   return true;
 };
 
-const unsaveJob = (jobId: number) => {
+const unsaveJob = (jobId: string | number) => {
   const savedJobs = JSON.parse(
     localStorage.getItem("savedJobs") || "[]"
   );
@@ -117,12 +121,28 @@ const unsaveJob = (jobId: number) => {
       <div className="flex-grow">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#E6F2DD] flex items-center justify-center text-[#659287] font-bold text-xl">
+            <div 
+              onClick={(e) => {
+                e.stopPropagation();
+                const companyId = (job as any).createdBy?._id || (job as any).createdBy;
+                if (companyId) navigate(`/companies/${companyId}`);
+              }}
+              className="w-12 h-12 rounded-xl bg-[#E6F2DD] flex items-center justify-center text-[#659287] font-bold text-xl cursor-pointer hover:opacity-80 transition-opacity"
+            >
               {job.logo}
             </div>
             <div>
               <h3 className="text-lg font-bold text-[#2F4F46]">{job.title}</h3>
-              <p className="text-sm font-medium text-[#4A6A60]">{job.company}</p>
+              <p 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const companyId = (job as any).createdBy?._id || (job as any).createdBy;
+                  if (companyId) navigate(`/companies/${companyId}`);
+                }}
+                className="text-sm font-medium text-[#4A6A60] cursor-pointer hover:underline hover:text-[#659287]"
+              >
+                {job.company}
+              </p>
             </div>
           </div>
           <button
@@ -173,17 +193,34 @@ const unsaveJob = (jobId: number) => {
         </div>
       </div>
 
-      <div className="border-t border-gray-100 pt-4 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-xs text-[#4A6A60]/90">
+      <div className="border-t border-gray-100 pt-4 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-xs text-[#4A6A60]/90 font-medium">
           <Clock className="w-3.5 h-3.5" />
           <span>Posted {job.postedDate}</span>
         </div>
-        <button
-          onClick={() => navigate(`/jobs/${job.id}`)}
-          className="px-4 py-2 bg-white border border-[#B1D3B9] text-[#659287] text-xs font-bold rounded-lg hover:bg-[#E6F2DD] transition-colors"
-        >
-          View Details
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate(`/jobs/${job.id}`)}
+            className="px-4 py-2 bg-white border border-[#B1D3B9] text-[#659287] text-xs font-bold rounded-lg hover:bg-[#E6F2DD] transition-colors"
+          >
+            View Details
+          </button>
+          {hasApplied ? (
+            <button
+              disabled
+              className="px-4 py-2 bg-gray-100 border border-gray-200 text-gray-400 text-xs font-bold rounded-lg cursor-not-allowed flex items-center gap-1"
+            >
+              <Check className="w-3.5 h-3.5" /> Applied
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate(`/jobs/${job.id}`)}
+              className="px-4 py-2 bg-[#659287] text-white text-xs font-bold rounded-lg hover:bg-[#53786F] transition-colors"
+            >
+              Apply Now
+            </button>
+          )}
+        </div>
       </div>
     </motion.div>
   );
@@ -225,29 +262,58 @@ const SkeletonCard = () => (
 
 // --- MAIN JOBS PAGE ---
 function Jobs() {
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
+  const [myApplications, setMyApplications] = useState<any[]>([]);
+
+  const fetchMyApplications = async () => {
+    try {
+      const { data } = await api.get('/applications/my');
+      setMyApplications(data || []);
+    } catch (err) {
+      console.error('Failed to fetch applications:', err);
+    }
+  };
+
+  const fetchJobs = async () => {
+    try {
+      const data = await getJobs();
+      const jobList = data?.jobs || data || [];
+      const mappedJobs = jobList.map((j: any) => ({
+        ...j,
+        id: j._id || j.id,
+        logo: j.company ? j.company.charAt(0) : 'J',
+        type: j.jobType || j.type || 'Full Time',
+        postedDate: j.createdAt ? new Date(j.createdAt).toLocaleDateString() : 'Just now'
+      }));
+      setJobs(mappedJobs);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to load jobs');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1000);
-    return () => clearTimeout(timer);
+    fetchJobs();
+    fetchMyApplications();
   }, []);
 
   const availableJobs = jobs.length;
   const newThisWeek = useMemo(() => {
     return jobs.filter(job => {
-        const value = parseInt(job.postedDate);
-        if (job.postedDate.includes('w')) {
-            return value * 7 <= 7;
-        }
-        if (job.postedDate.includes('d')) {
-            return value <= 7;
-        }
-        return false;
+      if (!(job as any).createdAt) return false;
+      const diffTime = Math.abs(new Date().getTime() - new Date((job as any).createdAt).getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays <= 7;
     }).length;
-  }, []);
-  const remoteJobs = useMemo(() => jobs.filter(job => job.location === 'Remote').length, []);
+  }, [jobs]);
+
+  const remoteJobs = useMemo(() => jobs.filter(job => job.location === 'Remote').length, [jobs]);
+
   const filteredJobs = useMemo(() => {
     return jobs.filter(job => {
       const matchesFilter = activeFilter === 'All' || job.type === activeFilter || (activeFilter === 'Remote' && job.location === 'Remote') || job.skills.includes(activeFilter);
@@ -259,7 +325,7 @@ function Jobs() {
 
       return matchesFilter && matchesSearch;
     });
-  }, [searchTerm, activeFilter]);
+  }, [jobs, searchTerm, activeFilter]);
 
   const resetFilters = () => {
     setSearchTerm('');
@@ -270,29 +336,12 @@ function Jobs() {
   return (
     <div className="w-full max-w-full overflow-x-hidden px-4 lg:px-8 space-y-8 pb-12">
         {/* 1. Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center pt-8 space-y-3"
-        >
-          <h1
-  style={{
-    color: "#2F4F46",
-    opacity: 1,
-    fontWeight: 800,
-    fontSize: "3rem",
-    letterSpacing: "-0.02em",
-    lineHeight: "1.1",
-  }}
->
-  Find Your Next Opportunity
-</h1>
- 
-          <p className="mt-3 max-w-2xl mx-auto text-lg" style={{ color: "#4A6A60" }}>
-            Discover internships, part-time roles, and full-time opportunities tailored for your skills.
-          </p>
-        </motion.div>
+        <HeroCard
+          badgeText="Candidate Opportunity Center"
+          title="Find Your Next Opportunity"
+          description="Discover internships, part-time roles, and full-time opportunities tailored for your skills in the WorkWave community."
+          IconComponent={Briefcase}
+        />
 
         {/* 2. Search Section */}
         <div className="relative">
@@ -338,7 +387,14 @@ function Jobs() {
         ) : filteredJobs.length > 0 ? (
           <div className="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
             {filteredJobs.map(job => (
-              <JobCard key={job.id} job={job} />
+              <JobCard 
+                key={job.id} 
+                job={job} 
+                hasApplied={myApplications.some((app: any) => {
+                  const appJobId = app.job?._id || app.job?.id || app.job || '';
+                  return appJobId.toString() === job.id.toString();
+                })}
+              />
             ))}
           </div>
         ) : (

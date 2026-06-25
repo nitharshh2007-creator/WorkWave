@@ -1,23 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Search, 
+import {
+  Search,
   Briefcase,
-  Clock,
   CheckCircle,
   XCircle,
   FileText,
-  BarChart,
-  Eye,
-  Trash2,
   Hourglass,
   Calendar,
   Frown,
-  Filter
+  Trash2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
+import HeroCard from '../components/HeroCard';
 
 // --- TYPE DEFINITIONS ---
 interface Application {
@@ -25,27 +22,75 @@ interface Application {
   jobTitle: string;
   company: string;
   location: string;
-  status: 'Pending' | 'Accepted' | 'Rejected';
+  status: string;
   createdAt: string;
+  resumeUrl?: string;
+  resumeFileName?: string;
+  coverLetter?: string;
+  job?: {
+    salary?: {
+      min: number;
+      max: number;
+    };
+  };
+  interviewDate?: string;
+  interviewTime?: string;
+  meetingLink?: string;
+  interviewNotes?: string;
+  interviewStatus?: 'Upcoming' | 'Completed' | 'Cancelled';
+  interviewMode?: string;
+  interviewLocation?: string;
+  interviewDuration?: string;
 }
 
-const statusLevels = ['Applied', 'Reviewed', 'Interview', 'Final'];
+const statusLevels = ['Applied', 'Reviewed', 'Shortlisted', 'Interview Scheduled', 'Interview Completed', 'Hired'];
 
 // --- STATUS HELPERS ---
-const getStatusBadgeStyle = (status: Application['status']) => {
+const getStatusBadgeStyle = (status: string) => {
   switch (status) {
-    case 'Pending': return 'bg-[#E6F2DD] text-[#4A6A60]';
-    case 'Accepted': return 'bg-[#DCFCE7] text-[#166534]';
-    case 'Rejected': return 'bg-[#FEE2E2] text-[#991B1B]';
-    default: return 'bg-gray-100 text-gray-800';
+    case 'Pending':
+    case 'Applied':
+      return 'bg-[#E6F2DD] text-[#4A6A60]';
+    case 'Reviewed':
+    case 'Under Review':
+      return 'bg-blue-50 text-blue-700 border border-blue-200';
+    case 'Shortlisted':
+      return 'bg-purple-50 text-purple-700 border border-purple-200';
+    case 'Interview Scheduled':
+    case 'Interview':
+      return 'bg-amber-50 text-amber-700 border border-amber-200';
+    case 'Interview Completed':
+      return 'bg-cyan-50 text-cyan-700 border border-cyan-200';
+    case 'Accepted':
+    case 'Hired':
+      return 'bg-[#DCFCE7] text-[#166534]';
+    case 'Rejected':
+      return 'bg-[#FEE2E2] text-[#991B1B]';
+    default:
+      return 'bg-gray-100 text-gray-800';
   }
 };
 
-const getProgressLevel = (status: Application['status']) => {
+const getProgressLevel = (status: string) => {
   switch (status) {
-    case 'Accepted': return 4;
-    case 'Pending': return 1;
-    default: return 0;
+    case 'Pending':
+    case 'Applied':
+      return 1;
+    case 'Reviewed':
+    case 'Under Review':
+      return 2;
+    case 'Shortlisted':
+      return 3;
+    case 'Interview Scheduled':
+    case 'Interview':
+      return 4;
+    case 'Interview Completed':
+      return 5;
+    case 'Accepted':
+    case 'Hired':
+      return 6;
+    default:
+      return 1;
   }
 };
 
@@ -72,7 +117,6 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon }) => (
 
 // --- APPLICATION CARD COMPONENT ---
 const ApplicationCard: React.FC<{ application: Application; onWithdraw: (id: string) => void; }> = ({ application, onWithdraw }) => {
-  const navigate = useNavigate();
   const progressLevel = getProgressLevel(application.status);
 
   return (
@@ -86,42 +130,127 @@ const ApplicationCard: React.FC<{ application: Application; onWithdraw: (id: str
         <div className="flex items-start justify-between mb-4">
           <div>
             <h3 className="text-lg font-bold text-[#2F4F46]">{application.jobTitle}</h3>
-            <p className="text-sm font-medium text-[#4A6A60]">{application.company}</p>
+            <p 
+              onClick={() => {
+                const companyId = (application as any).employer?._id || (application as any).employer;
+                if (companyId) navigate(`/companies/${companyId}`);
+              }}
+              className="text-sm font-medium text-[#659287] cursor-pointer hover:underline"
+            >
+              {application.company}
+            </p>
             <p className="text-xs text-[#4A6A60]/80 mt-1">{application.location}</p>
+            {application.job?.salary && (
+              <p className="text-xs font-semibold text-[#659287] mt-1.5">
+                Salary: ₹{application.job.salary.min.toLocaleString()} - ₹{application.job.salary.max.toLocaleString()}
+              </p>
+            )}
           </div>
           <span className={`px-3 py-1 text-xs font-bold rounded-full ${getStatusBadgeStyle(application.status)}`}>
             {application.status}
           </span>
         </div>
 
-        <div className="text-xs text-[#4A6A60] mb-5 flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5 text-[#88BDA4]" />
-          Applied {new Date(application.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-        </div>
-        
-        {/* Application Progress Bar */}
-        <div className="mb-6">
-          <h4 className="text-xs font-bold text-[#2F4F46] mb-3">Application Progress</h4>
-          <div className="flex items-center">
-            {statusLevels.map((level, index) => (
-              <React.Fragment key={level}>
-                <div className="flex flex-col items-center">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${
-                      index < progressLevel ? 'bg-[#659287] border-[#659287]' : 'bg-white border-gray-300'
-                    }`}>
-                    {index < progressLevel && <CheckCircle className="w-4 h-4 text-white" />}
-                  </div>
-                  <p className={`mt-2 text-xs font-semibold ${ index < progressLevel ? 'text-[#2F4F46]' : 'text-gray-400' }`}>
-                    {level}
-                  </p>
-                </div>
-                {index < statusLevels.length - 1 && (
-                  <div className={`flex-1 h-1 mx-2 ${ index < progressLevel - 1 ? 'bg-[#659287]' : 'bg-gray-300' }`}/>
-                )}
-              </React.Fragment>
-            ))}
+        <div className="text-xs text-[#4A6A60] mb-4 flex flex-col gap-1.5">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-[#88BDA4]" />
+            <span>Applied {new Date(application.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <FileText className="w-3.5 h-3.5 text-[#88BDA4]" />
+            <span>
+              Resume: {application.resumeFileName || 'Submitted Resume'}
+              {application.resumeUrl && (
+                <a
+                  href={`http://localhost:5000${application.resumeUrl}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#659287] hover:underline font-bold ml-2"
+                >
+                  View / Download
+                </a>
+              )}
+            </span>
           </div>
         </div>
+
+        {application.coverLetter && (
+          <div className="mb-4 p-3 bg-[#F8FAF8] border border-[#B1D3B9]/30 rounded-2xl text-xs text-[#4A6A60]">
+            <p className="font-bold text-[#2F4F46] mb-1">Cover Letter Submitted:</p>
+            <p className="italic">"{application.coverLetter}"</p>
+          </div>
+        )}
+        
+        {/* Application Progress Bar / Status Handling */}
+        {application.status === 'Rejected' ? (
+          <div className="mb-6 p-4 bg-rose-50 border border-rose-150 rounded-2xl flex items-center gap-2">
+            <XCircle className="w-5 h-5 text-rose-500 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-bold text-rose-700">Application Rejected</p>
+              <p className="text-[11px] text-rose-600 mt-0.5">We appreciate your interest and wish you the best in your job search.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6">
+            <h4 className="text-xs font-bold text-[#2F4F46] mb-3">Application Progress</h4>
+            <div className="flex items-center">
+              {statusLevels.map((level, index) => (
+                <React.Fragment key={level}>
+                  <div className="flex flex-col items-center">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 ${
+                        index < progressLevel ? 'bg-[#659287] border-[#659287]' : 'bg-white border-gray-300'
+                      }`}>
+                      {index < progressLevel && <CheckCircle className="w-4 h-4 text-white" />}
+                    </div>
+                    <p className={`mt-2 text-xs font-semibold ${ index < progressLevel ? 'text-[#2F4F46]' : 'text-gray-400' }`}>
+                      {level}
+                    </p>
+                  </div>
+                  {index < statusLevels.length - 1 && (
+                    <div className={`flex-1 h-1 mx-2 ${ index < progressLevel - 1 ? 'bg-[#659287]' : 'bg-gray-300' }`}/>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Scheduled Interview Section */}
+        {application.status === 'Interview Scheduled' && application.interviewDate && (
+          <div className="mb-6 p-4 bg-[#F4F9F4] border border-[#B1D3B9]/30 rounded-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold text-[#2F4F46]">
+                <Calendar className="w-4 h-4 text-[#659287]" />
+                <span>Interview Scheduled ({application.interviewStatus || 'Upcoming'})</span>
+              </div>
+              {application.interviewStatus !== 'Completed' && application.interviewStatus !== 'Cancelled' && (
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              )}
+            </div>
+            <div className="text-xs text-[#4A6A60] space-y-1">
+              <p><strong>Date & Time:</strong> {application.interviewDate} at {application.interviewTime} ({application.interviewDuration || '30 mins'})</p>
+              <p><strong>Mode:</strong> {application.interviewMode || 'Online'}</p>
+              {application.interviewMode === 'Offline' && application.interviewLocation && (
+                <p><strong>Location / Venue:</strong> {application.interviewLocation}</p>
+              )}
+              {application.interviewNotes && (
+                <p><strong>Message / Notes:</strong> {application.interviewNotes}</p>
+              )}
+            </div>
+            {application.interviewStatus !== 'Completed' && application.interviewStatus !== 'Cancelled' && application.interviewMode !== 'Offline' && application.meetingLink && (
+              <div className="flex items-center gap-2 pt-1">
+                <a
+                  href={application.meetingLink.startsWith('http') ? application.meetingLink : `https://${application.meetingLink}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full text-center py-2 bg-[#659287] hover:bg-[#53786F] text-white text-xs font-bold rounded-xl transition-colors shadow-sm"
+                >
+                  Join Meeting
+                </a>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       
       <div className="border-t border-gray-100 pt-4 flex items-center justify-end gap-2">
@@ -184,7 +313,25 @@ const MyApplications = () => {
     try {
       setLoading(true);
       const { data } = await api.get('/applications/my');
-      setApplications(data);
+      
+      // Filter out duplicate applications for the same job, keeping the earliest one (based on createdAt)
+      const uniqueAppsMap: { [jobId: string]: any } = {};
+      const sortedData = [...data].sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      
+      sortedData.forEach((app: any) => {
+        const jobId = app.job?._id || app.job?.id || app.job || '';
+        const key = jobId.toString();
+        if (!uniqueAppsMap[key]) {
+          uniqueAppsMap[key] = app;
+        }
+      });
+      
+      const filtered = data.filter((app: any) => {
+        const jobId = app.job?._id || app.job?.id || app.job || '';
+        return uniqueAppsMap[jobId.toString()]?._id === app._id;
+      });
+
+      setApplications(filtered);
     } catch (error) {
       toast.error('Failed to fetch applications.');
       console.error(error);
@@ -249,21 +396,12 @@ const MyApplications = () => {
     <>
       <div className="max-w-7xl mx-auto px-4 space-y-8 pb-12">
         {/* 1. Header Section */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="pt-8">
-          <h1
-  style={{
-    color: "#2F4F46",
-    opacity: 1,
-    fontWeight: 800,
-    fontSize: "3rem"
-  }}
->
-  My Applications
-</h1>
-     <p className="mt-2 text-lg text-[#4A6A60]">
-            Track and manage all your job applications in one place.
-          </p>
-        </motion.div>
+        <HeroCard
+          badgeText="Candidate Application Console"
+          title="My Applications"
+          description="Track status updates, follow interview requests, and manage your active applications."
+          IconComponent={FileText}
+        />
 
         {/* 2. Statistics Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

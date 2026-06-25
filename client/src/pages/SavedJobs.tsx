@@ -10,11 +10,14 @@ import {
   Bookmark,
   Trash2,
   Globe,
-  Code
+  Code,
+  Check
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { type Job } from './jobs';
-//import { getSavedJobs, unsaveJob } from '../services/savedJobsService';
+import HeroCard from '../components/HeroCard';
+import { getSavedJobs, unsaveJob } from '../services/savedJobsService';
+import api from '../services/api';
 
 // --- STAT CARD COMPONENT ---
 interface StatCardProps {
@@ -39,11 +42,11 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon }) => (
 );
 
 // --- SAVED JOB CARD COMPONENT ---
-const SavedJobCard: React.FC<{ job: Job; onRemove: (id: number) => void }> = ({ job, onRemove }) => {
+const SavedJobCard: React.FC<{ job: Job; hasApplied: boolean; onRemove: (id: string) => void }> = ({ job, hasApplied, onRemove }) => {
   const navigate = useNavigate();
-  const displayedSkills = job.skills.slice(0, 4);
-  const remainingSkills = job.skills.length - 4;
-  
+  const displayedSkills = (job.skills || []).slice(0, 4);
+  const remainingSkills = (job.skills || []).length - 4;
+  const jobId = (job as any)._id || (job as any).id || '';
 
   return (
     <motion.div
@@ -55,12 +58,26 @@ const SavedJobCard: React.FC<{ job: Job; onRemove: (id: number) => void }> = ({ 
       <div className="flex-grow">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#E6F2DD] flex items-center justify-center text-[#659287] font-bold text-xl">
-              {job.logo}
+            <div 
+              onClick={() => {
+                const companyId = (job as any).createdBy?._id || (job as any).createdBy;
+                if (companyId) navigate(`/companies/${companyId}`);
+              }}
+              className="w-12 h-12 rounded-xl bg-[#E6F2DD] flex items-center justify-center text-[#659287] font-bold text-xl cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              {job.logo || (job.company ? job.company.charAt(0).toUpperCase() : 'W')}
             </div>
             <div>
               <h3 className="text-lg font-bold text-[#2F4F46]">{job.title}</h3>
-              <p className="text-sm font-medium text-[#4A6A60]">{job.company}</p>
+              <p 
+                onClick={() => {
+                  const companyId = (job as any).createdBy?._id || (job as any).createdBy;
+                  if (companyId) navigate(`/companies/${companyId}`);
+                }}
+                className="text-sm font-medium text-[#4A6A60] cursor-pointer hover:underline hover:text-[#659287]"
+              >
+                {job.company}
+              </p>
             </div>
           </div>
         </div>
@@ -76,11 +93,11 @@ const SavedJobCard: React.FC<{ job: Job; onRemove: (id: number) => void }> = ({ 
           </div>
           <div className="flex items-center gap-1.5">
             <IndianRupee className="w-3.5 h-3.5 text-[#88BDA4]" />
-            <span>{job.salary.min.toLocaleString()}-{job.salary.max.toLocaleString()} / month</span>
+            <span>{job.salary?.min ? job.salary.min.toLocaleString() : 'N/A'}-{job.salary?.max ? job.salary.max.toLocaleString() : 'N/A'} / month</span>
           </div>
           <div className="flex items-center gap-1.5">
             <Users className="w-3.5 h-3.5 text-[#88BDA4]" />
-            <span>{job.applicants} applicants</span>
+            <span>{job.applicants || 0} applicants</span>
           </div>
         </div>
 
@@ -103,24 +120,33 @@ const SavedJobCard: React.FC<{ job: Job; onRemove: (id: number) => void }> = ({ 
 
       <div className="border-t border-gray-100 pt-4 flex items-center justify-between gap-2">
         <button
-  onClick={() => onRemove(job.id)}
-  className="px-4 py-2 bg-rose-50 border border-rose-200 text-rose-500 text-xs font-bold rounded-lg hover:bg-rose-100 transition-colors flex items-center gap-1.5"
->
+          onClick={() => onRemove(jobId)}
+          className="px-4 py-2 bg-rose-50 border border-rose-200 text-rose-500 text-xs font-bold rounded-lg hover:bg-rose-100 transition-colors flex items-center gap-1.5"
+        >
           <Trash2 className="w-3.5 h-3.5" />
           Remove
         </button>
         <button
-          onClick={() => navigate(`/jobs/${job.id}`)}
+          onClick={() => navigate(`/jobs/${jobId}`)}
           className="px-4 py-2 bg-white border border-[#B1D3B9] text-[#659287] text-xs font-bold rounded-lg hover:bg-[#E6F2DD] transition-colors"
         >
           View Details
         </button>
-        <button
-          onClick={() => navigate(`/jobs/${job.id}`)}
-          className="px-4 py-2 bg-[#659287] text-white text-xs font-bold rounded-lg hover:bg-[#53786F] transition-colors"
-        >
-          Apply Now
-        </button>
+        {hasApplied ? (
+          <button
+            disabled
+            className="px-4 py-2 bg-gray-100 border border-gray-200 text-gray-400 text-xs font-bold rounded-lg cursor-not-allowed flex items-center gap-1"
+          >
+            <Check className="w-3.5 h-3.5" /> Applied
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate(`/jobs/${jobId}`)}
+            className="px-4 py-2 bg-[#659287] text-white text-xs font-bold rounded-lg hover:bg-[#53786F] transition-colors"
+          >
+            Apply Now
+          </button>
+        )}
       </div>
     </motion.div>
   );
@@ -182,27 +208,46 @@ function SavedJobs() {
   const [savedJobs, setSavedJobs] = useState<Job[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [myApplications, setMyApplications] = useState<any[]>([]);
   const navigate = useNavigate();
 
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      const data = await getSavedJobs();
+      setSavedJobs(data);
+      const appsRes = await api.get('/applications/my');
+      setMyApplications(appsRes.data || []);
+    } catch (err) {
+      toast.error("Failed to load saved jobs.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("savedJobs") || "[]");
-    setSavedJobs(saved);
+    fetchJobs();
   }, []);
   
-  const handleRemoveClick = (id: number) => {
+  const handleRemoveClick = (id: string) => {
     setSelectedJobId(id);
     setShowDeleteModal(true);
   };
 
-  const handleConfirmRemove = () => {
+  const handleConfirmRemove = async () => {
     if (selectedJobId === null) return;
-    const updatedJobs = savedJobs.filter(job => job.id !== selectedJobId);
-    localStorage.setItem("savedJobs", JSON.stringify(updatedJobs));
-    setSavedJobs(updatedJobs);
-    toast.success("Job removed from saved jobs");
-    setShowDeleteModal(false);
-    setSelectedJobId(null);
+    try {
+      await unsaveJob(selectedJobId);
+      toast.success("Job removed from saved jobs");
+      fetchJobs();
+    } catch (err) {
+      toast.error("Failed to remove saved job");
+    } finally {
+      setShowDeleteModal(false);
+      setSelectedJobId(null);
+    }
   };
 
   const remoteJobsCount = useMemo(() => savedJobs.filter(job => job.location === 'Remote').length, [savedJobs]);
@@ -213,35 +258,34 @@ function SavedJobs() {
       const matchesSearch = searchTerm === '' ||
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
+        (job.skills || []).some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()));
       return matchesSearch;
     });
   }, [searchTerm, savedJobs]);
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-full overflow-x-hidden px-4 lg:px-8 space-y-8 pb-12 animate-pulse">
+        <div className="h-44 w-full bg-white/50 border border-[#E6F2DD] rounded-3xl" />
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-28 bg-white/50 border border-[#E6F2DD] rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="w-full max-w-full overflow-x-hidden px-4 lg:px-8 space-y-8 pb-12">
         {/* 1. Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-left pt-8 space-y-2"
-        >
-          <h1
-  style={{
-    color: "#2F4F46",
-    opacity: 1,
-    fontWeight: 800,
-    fontSize: "3rem",
-    letterSpacing: "-0.02em",
-    lineHeight: "1.1",
-  }}
->Saved Jobs</h1>
-          <p className="text-lg text-[#4A6A60]">
-            Track opportunities you are interested in and apply when ready.
-          </p>
-        </motion.div>
+        <HeroCard
+          badgeText="Candidate Watchlist"
+          title="Saved Jobs"
+          description="Track opportunities you are interested in, monitor openings, and apply when ready."
+          IconComponent={Bookmark}
+        />
 
         {/* 2. Top Statistics */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -267,7 +311,16 @@ function SavedJobs() {
           filteredJobs.length > 0 ? (
            <div className="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]">
               {filteredJobs.map(job => (
-                <SavedJobCard key={job.id} job={job} onRemove={handleRemoveClick} />
+                <SavedJobCard 
+                  key={job.id} 
+                  job={job} 
+                  hasApplied={myApplications.some((app: any) => {
+                    const appJobId = app.job?._id || app.job?.id || app.job || '';
+                    const jId = (job as any)._id || (job as any).id || '';
+                    return appJobId.toString() === jId.toString();
+                  })}
+                  onRemove={handleRemoveClick} 
+                />
               ))}
             </div>
           ) : (

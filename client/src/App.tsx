@@ -12,9 +12,9 @@ import MyApplications from './pages/MyApplications';
 import SavedJobs from './pages/SavedJobs';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import CandidateInterviews from './pages/CandidateInterviews';
 import ProtectedRoute from './components/ProtectedRoute';
 import CandidateLayout from './layouts/CandidateLayout';
-import AppLayout from './components/AppLayout';
 import ManageJobs from './pages/ManageJobs';
 import EmployerDashboard from './pages/EmployerDashboard';
 import EmployerLayout from './layouts/EmployerLayout';
@@ -25,6 +25,11 @@ import EmployerSettings from './pages/employer/EmployerSettings';
 import Applicants from './pages/employer/Applicants';
 import CompanyProfile from './pages/employer/CompanyProfile';
 import MyAccount from './pages/employer/MyAccount';
+import EmployerInterviews from './pages/employer/EmployerInterviews';
+import EmployerNotifications from './pages/employer/EmployerNotifications';
+import Notifications from './pages/Notifications';
+import PublicCompanyProfile from './pages/PublicCompanyProfile';
+import Resources from './pages/Resources';
 
 function App() {
   return (
@@ -44,9 +49,14 @@ function App() {
               <Route path="/jobs" element={<Jobs />} />
               <Route path="/jobs/:id" element={<JobDetails />} />
               <Route path="/applications" element={<MyApplications />} />
+              <Route path="/candidate/interviews" element={<CandidateInterviews />} />
               <Route path="/saved-jobs" element={<SavedJobs />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/companies/:id" element={<PublicCompanyProfile />} />
+              <Route path="/resources" element={<Resources />} />
+              <Route path="/resources/:id" element={<Resources />} />
             </Route>
           </Route>
 
@@ -56,8 +66,11 @@ function App() {
               <Route path="/employer/dashboard" element={<EmployerDashboard />} />
               <Route path="/employer/jobs" element={<ManageJobs />} />
               <Route path="/employer/jobs/new" element={<PostJob />} />
+              <Route path="/employer/jobs/edit/:id" element={<PostJob />} />
               <Route path="/employer/applicants" element={<Applicants />} />
+              <Route path="/employer/interviews" element={<EmployerInterviews />} />
               <Route path="/employer/analytics" element={<Analytics />} />
+              <Route path="/employer/notifications" element={<EmployerNotifications />} />
               <Route path="/employer/settings" element={<EmployerSettings />} />
               <Route path="/employer/profile" element={<CompanyProfile />} />
               <Route path="/employer/account" element={<MyAccount />} />

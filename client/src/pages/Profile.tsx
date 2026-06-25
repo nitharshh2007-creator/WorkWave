@@ -5,7 +5,7 @@ import { Toaster, toast } from 'react-hot-toast';
 import { 
   Camera, FileText, Check, AlertCircle, Save, Loader, Compass, 
   Bookmark, Briefcase, Plus, X, Globe, Eye, Lock, Download, Trash, 
-  ExternalLink, Mail, Phone, MapPin, User, ChevronRight, Sparkles, AlertTriangle
+  Mail, Phone, MapPin, User, Sparkles, AlertTriangle
 } from 'lucide-react';
 import api from '../services/api';
 
@@ -28,6 +28,11 @@ interface ProfileState {
   profileStrength: number;
   role: string;
   createdAt: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  portfolioUrl?: string;
+  experience?: string;
+  education?: string;
 }
 
 const getFullUrl = (path: string) => {
@@ -56,6 +61,11 @@ export const Profile: React.FC = () => {
     profileStrength: 0,
     role: 'candidate',
     createdAt: '',
+    linkedinUrl: '',
+    githubUrl: '',
+    portfolioUrl: '',
+    experience: '',
+    education: '',
   });
 
   const [initialProfile, setInitialProfile] = useState<ProfileState | null>(null);
@@ -92,6 +102,11 @@ export const Profile: React.FC = () => {
         profileStrength: data.profileStrength || 0,
         role: data.role || 'candidate',
         createdAt: data.createdAt || '',
+        linkedinUrl: data.linkedinUrl || '',
+        githubUrl: data.githubUrl || '',
+        portfolioUrl: data.portfolioUrl || '',
+        experience: data.experience || '',
+        education: data.education || '',
       };
       setProfile(loadedProfile);
       setInitialProfile(loadedProfile);
@@ -169,6 +184,11 @@ export const Profile: React.FC = () => {
         skills: profile.skills,
         professionalTitle: profile.professionalTitle,
         profileVisibility: profile.profileVisibility,
+        linkedinUrl: profile.linkedinUrl,
+        githubUrl: profile.githubUrl,
+        portfolioUrl: profile.portfolioUrl,
+        experience: profile.experience,
+        education: profile.education,
       });
 
       const updatedProfile: ProfileState = {
@@ -181,6 +201,11 @@ export const Profile: React.FC = () => {
         skills: data.skills,
         professionalTitle: data.professionalTitle,
         profileVisibility: data.profileVisibility,
+        linkedinUrl: data.linkedinUrl,
+        githubUrl: data.githubUrl,
+        portfolioUrl: data.portfolioUrl,
+        experience: data.experience,
+        education: data.education,
       };
 
       setProfile(updatedProfile);
@@ -251,7 +276,6 @@ export const Profile: React.FC = () => {
         },
       });
 
-      const updatedUser = response.data.user;
       setProfile(prev => ({
         ...prev,
         resumeUrl: response.data.resumeUrl,
@@ -636,6 +660,85 @@ export const Profile: React.FC = () => {
                     onChange={handleChange}
                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-[#2F4F46] placeholder:text-gray-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-[#659287]/20 focus:border-[#659287] text-sm"
                     placeholder="Coimbatore, Tamil Nadu"
+                  />
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Social Links & Details Card */}
+            <motion.div 
+              whileHover={{ y: -4, scale: 1.005 }}
+              className="backdrop-blur-xl bg-white/70 border border-white/20 rounded-3xl shadow-xl p-6 space-y-5"
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <h3 className="text-lg font-extrabold text-[#2F4F46] flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-[#659287]" /> Social Links & Details
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* LinkedIn URL */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-[#4A6A60] uppercase tracking-wider">LinkedIn URL</label>
+                  <input 
+                    type="text" 
+                    name="linkedinUrl" 
+                    value={profile.linkedinUrl || ''} 
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-[#2F4F46] placeholder:text-gray-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-[#659287]/20 focus:border-[#659287] text-sm"
+                    placeholder="https://linkedin.com/in/username"
+                  />
+                </div>
+
+                {/* GitHub URL */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-[#4A6A60] uppercase tracking-wider">GitHub URL</label>
+                  <input 
+                    type="text" 
+                    name="githubUrl" 
+                    value={profile.githubUrl || ''} 
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-[#2F4F46] placeholder:text-gray-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-[#659287]/20 focus:border-[#659287] text-sm"
+                    placeholder="https://github.com/username"
+                  />
+                </div>
+
+                {/* Portfolio URL */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-[#4A6A60] uppercase tracking-wider">Portfolio URL</label>
+                  <input 
+                    type="text" 
+                    name="portfolioUrl" 
+                    value={profile.portfolioUrl || ''} 
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-[#2F4F46] placeholder:text-gray-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-[#659287]/20 focus:border-[#659287] text-sm"
+                    placeholder="https://myportfolio.com"
+                  />
+                </div>
+
+                {/* Experience (Years) */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-[#4A6A60] uppercase tracking-wider">Experience Level</label>
+                  <input 
+                    type="text" 
+                    name="experience" 
+                    value={profile.experience || ''} 
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-[#2F4F46] placeholder:text-gray-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-[#659287]/20 focus:border-[#659287] text-sm"
+                    placeholder="e.g. 3 Years, 5+ Years"
+                  />
+                </div>
+
+                {/* Education */}
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="block text-xs font-bold text-[#4A6A60] uppercase tracking-wider">Education</label>
+                  <input 
+                    type="text" 
+                    name="education" 
+                    value={profile.education || ''} 
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-50/50 text-[#2F4F46] placeholder:text-gray-400 outline-none transition-all focus:bg-white focus:ring-2 focus:ring-[#659287]/20 focus:border-[#659287] text-sm"
+                    placeholder="e.g. B.Tech in Computer Science, MBA"
                   />
                 </div>
               </div>

@@ -157,7 +157,16 @@ export default function ViewApplicants() {
       <div className="text-[#2F4F46] relative flex items-center justify-center text-center">
         <div className="bg-white/60 backdrop-blur-lg border border-[#E6F2DD]/80 rounded-2xl shadow-sm p-12">
           <Frown className="w-16 h-16 mx-auto text-[#B1D3B9]" />
-          <h1 className="text-2xl font-bold text-[#2F4F46] mt-4">No Job Selected</h1>
+          <h1
+  style={{
+    color: "#2F4F46",
+    opacity: 1,
+    fontWeight: 500,
+    fontSize: "1rem",
+    letterSpacing: "-0.02em",
+    lineHeight: "1.1",
+  }}
+>No Job Selected</h1>
           <p className="text-[#4A6A60] mt-2 mb-6">Please select a job from the "Manage Jobs" page to view its applicants.</p>
           <button
             onClick={() => navigate('/employer/jobs')}

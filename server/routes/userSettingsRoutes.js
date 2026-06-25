@@ -1,23 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const {
-  getSettings,
-  updateProfile,
-  changePassword,
-  updateNotifications,
-  updatePrivacy,
-  updateResume,
-  removeResume,
-  logoutAllDevices,
-  deleteAccount,
-} = require('../controllers/userSettingsController');
-const { protect } = require('../middleware/authMiddleware'); // Assuming path
+const path = require('path');
+const userSettingsController = require('../controllers/userSettingsController');
+const { protect } = require('../middleware/authMiddleware');
 
 // Multer config for resume uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'public/uploads/resumes/');
+    const fs = require('fs');
+    const uploadPath = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
     cb(null, `resume-${req.user.id}-${Date.now()}${path.extname(file.originalname)}`);
@@ -36,14 +32,20 @@ const upload = multer({
 
 router.use(protect);
 
-router.get('/', getSettings);
-router.patch('/profile', updateProfile);
-router.patch('/change-password', changePassword);
-router.patch('/notifications', updateNotifications);
-router.patch('/privacy', updatePrivacy);
-router.post('/resume', upload.single('resume'), updateResume);
-router.delete('/resume', removeResume);
-router.post('/logout-all', logoutAllDevices);
-router.delete('/account', deleteAccount);
+router.get('/', userSettingsController.getSettings);
+router.patch('/profile', userSettingsController.updateProfile);
+router.patch('/change-password', userSettingsController.changePassword);
+router.patch('/notifications', userSettingsController.updateNotifications);
+router.patch('/privacy', userSettingsController.updatePrivacy);
+router.patch('/hiring-preferences', userSettingsController.updateHiringPreferences);
+router.patch('/appearance', userSettingsController.updateAppearance);
+router.patch('/integrations', userSettingsController.updateIntegrations);
+router.get('/sessions', userSettingsController.getSessions);
+router.delete('/sessions/:id', userSettingsController.deleteSession);
+router.get('/export/:type', userSettingsController.exportData);
+router.post('/resume', upload.single('resume'), userSettingsController.updateResume);
+router.delete('/resume', userSettingsController.removeResume);
+router.post('/logout-all', userSettingsController.logoutAllDevices);
+router.delete('/account', userSettingsController.deleteAccount);
 
 module.exports = router;
