@@ -4,3 +4,5 @@ dist/
 build/
 .vscode/
 coverage/
+.vscode/
+.kiro/
