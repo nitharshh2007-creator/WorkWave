@@ -54,9 +54,6 @@
 * **Export Analytics PDF**: Generate professional, publication-quality PDF reports summarizing recruitment trends, hiring conversion rates, and monthly workloads via native custom engines.
 * **Recruiter Settings**: Toggle-driven notification rules and secure credentials management.
 
-### Admin Features
-* *(Partially Implemented)*: Under development. Database supports the `"admin"` role, and TypeScript types allow for expansion into system-wide user/employer management, reporting analytics, and health monitoring.
-
 ---
 
 ## Tech Stack
