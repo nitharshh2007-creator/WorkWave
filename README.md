@@ -268,7 +268,7 @@ CLIENT_URL=http://localhost:5173
 ---
 
 ## Contributors
-* **Nitharshan** - Project Architect & Lead developer.
+* **Nitharshana** - Project Architect & Lead developer.
 * *Contributions are welcome! Please open an issue or submit a pull request.*
 
 ---
